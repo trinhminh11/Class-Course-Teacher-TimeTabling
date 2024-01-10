@@ -3,7 +3,7 @@ from CONSTANT import import_data, Teacher, Class
 
 
 class Solver:
-	def __init__(self, classes, teachers, subjects):
+	def __init__(self, classes: list[Class], teachers: list[Teacher], subjects):
 		self.classes = classes
 		self.teachers = teachers
 		self.subjects = subjects
@@ -49,13 +49,10 @@ class Solver:
 
 		self.used = []
 
-
 		# Scan the jobs and create the relevant variables and intervals.
 		for job_idx in all_jobs:
 			job = self.jobs[job_idx]
-			num_tasks = len(job)
-			for task_idx in range(num_tasks):
-
+			for task_idx in range(len(job)):
 				task = job[task_idx]
 
 				# if there are no teacher to teach this jobs[job_idx][task_idx]
@@ -67,7 +64,6 @@ class Solver:
 
 
 				suffix_name = '_j%i_t%i' % (job_idx, task_idx)
-
 
 				start = model.NewIntVar(0, 60-task[0][0], 'start' + suffix_name)
 				# Store the start for the solution.
@@ -120,10 +116,10 @@ class Solver:
 
 
 		# Create teachers constraints.
+
 		for teacher_id in all_teachers:
 			if teacher_id not in intervals_per_teacher.keys():
 				continue
-
 			intervals = intervals_per_teacher[teacher_id]
 
 			if len(intervals) > 1:
@@ -145,8 +141,7 @@ class Solver:
 
 		self.solver.parameters.max_time_in_seconds = 298
 
-
-		status = self.solver.Solve(model)
+		self.solver.Solve(model)
 
 	def print_sol(self):
 		ans = ''

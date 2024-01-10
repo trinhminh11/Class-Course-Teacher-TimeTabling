@@ -5,11 +5,10 @@ BIG_NUM = 100
 
 
 class Solver:
-	def __init__(self, classes, teachers, subjects):
+	def __init__(self, classes: list[Class], teachers: list[Teacher], subjects):
 		self.classes = classes
 		self.teachers = teachers
 		self.time_subjects = subjects
-
 
 		self.jobs = self.encode_data()
 	
