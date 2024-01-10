@@ -1,7 +1,7 @@
 from ortools.linear_solver import pywraplp
-from CONSTANT import import_data, Teacher, Class, master_folder
+from CONSTANT import import_data, Teacher, Class
 
-BIG_NUM = 1e10
+BIG_NUM = 100
 
 
 class Solver:
@@ -51,17 +51,19 @@ class Solver:
 				if task[0] == (-1, -1):
 					continue
 
+				num_alternatives = len(task)
+				all_alternatives = range(num_alternatives)
+
 				l_presences = []
 
-				for alt_id in range(len(task)):
+				for alt_id in all_alternatives:
 					alt_suffix = '_j%i_t%i_a%i' % (job_id, task_id, alt_id)
-
+					# l_presence = 1 if jobs[job_idx][task_idx] use this alt_idx, 0 otherwise
 					l_presence = self.solver.BoolVar('presence' + alt_suffix)
 					l_start = self.solver.IntVar(0, 60-task[alt_id][0], 'start' + alt_suffix)
 					l_end = self.solver.IntVar(1, 60, 'end' + alt_suffix)
-
+					# interval var of this alt_idx
 					self.solver.Add(l_start+ task[alt_id][0] == l_end)
-
 					l_interval = [job_id, task_id, alt_id, l_presence, l_start, l_end]
 
 					l_presences.append(l_presence)
@@ -81,7 +83,7 @@ class Solver:
 					self.presences.append(sum(l_presences))
 					self.solver.Add(sum(l_presences) <= 1)
 
-		# Create machines constraints.
+		# Create teachers constraints.
 		for teacher_id in all_teachers:
 			intervals = intervals_per_teachers[teacher_id] + [[None, None, None, self.solver.IntVar(1, 1, ""), self.solver.IntVar(-1, -1, ""), self.solver.IntVar(-1, -1, "")]]
 			_temp = len(intervals)
@@ -89,6 +91,7 @@ class Solver:
 			for i in range(_temp-1):
 				job_id, task_id, alt_id, is_presence, start, end = intervals[i]
 
+				# starts//6 = (end-1)//6
 				q1 = self.solver.IntVar(0, 9, "start quotient")
 				q2 = self.solver.IntVar(0, 9, "end quotient")
 
@@ -97,12 +100,12 @@ class Solver:
 
 				self.solver.Add(start == q1 * 6 + r1)
 				self.solver.Add(end-1 == q2 * 6 + r2)
-
+		
 				self.solver.Add(q1 == q2)	
 
 				for j in range(i+1, _temp):
-					first = intervals[i]
-					second = intervals[j]
+					first = intervals[i] # [job_id, task_id, alt_id, l_presence, l_start, l_end] or [i, j, t, presence, start, end]
+					second = intervals[j] # [job_id, task_id, alt_id, l_presence, l_start, l_end] or [i, j, t, presence, start, end]
 					
 					first_gt_second = self.solver.BoolVar(" ")
 					second_gt_first = self.solver.BoolVar(" ")
@@ -124,8 +127,9 @@ class Solver:
 					ct2.SetCoefficient(second[4], -1)
 					ct2.SetCoefficient(first[5], 1)
 
-					self.solver.Add(2*nor + first[3] + second[3] <= 3)
+					self.solver.Add(nor + first[3] + second[3] <= 2)
 		
+		# Create classes constraints.
 		for job_id in all_jobs:
 			if job_id not in intervals_per_classes.keys():
 				continue
@@ -134,8 +138,8 @@ class Solver:
 
 			for i in range(_temp-1):
 				for j in range(i+1, _temp):
-					first = intervals[i]
-					second = intervals[j]
+					first = intervals[i] # [job_id, task_id, alt_id, l_presence, l_start, l_end] or [i, j, t, presence, start, end]
+					second = intervals[j]# [job_id, task_id, alt_id, l_presence, l_start, l_end] or [i, j, t, presence, start, end]
 					
 					first_gt_second = self.solver.BoolVar(" ")
 					second_gt_first = self.solver.BoolVar(" ")
@@ -157,7 +161,7 @@ class Solver:
 					ct2.SetCoefficient(second[4], -1)
 					ct2.SetCoefficient(first[5], 1)
 
-					self.solver.Add(2*nor + first[3] + second[3] <= 3)
+					self.solver.Add(nor + first[3] + second[3] <= 2)
 		
 		self.solver.Maximize(sum(self.presences))
 

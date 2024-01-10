@@ -1,18 +1,5 @@
-"""Solves a flexible jobshop problems with the CP-SAT solver.
-
-A jobshop is a standard scheduling problem when you must sequence a
-series of task_types on a set of machines. Each job contains one task_type per
-machine. The order of execution and the length of each job on each
-machine is task_type dependent.
-
-The objective is to minimize the maximum completion time of all
-jobs. This is called the makespan.
-"""
-
-
 from ortools.sat.python import cp_model
-from CONSTANT import import_data, Teacher, Class, master_folder
-
+from CONSTANT import import_data, Teacher, Class
 
 
 class Solver:
@@ -79,11 +66,10 @@ class Solver:
 				all_alternatives = range(num_alternatives)
 
 
-				# Create main interval for the task, startingtime and endingtime of jobs[job_idx][task_idx]
 				suffix_name = '_j%i_t%i' % (job_idx, task_idx)
 
-				start = model.NewIntVar(0, 60-task[0][0], 'start' + suffix_name)
 
+				start = model.NewIntVar(0, 60-task[0][0], 'start' + suffix_name)
 				# Store the start for the solution.
 				self.starts[(job_idx, task_idx)] = start	
 
@@ -161,8 +147,6 @@ class Solver:
 
 
 		status = self.solver.Solve(model)
-
-		print(status == cp_model.OPTIMAL)
 
 	def print_sol(self):
 		ans = ''
